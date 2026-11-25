@@ -36,7 +36,7 @@ export default {
       await fs.mkdir(workDir, { recursive: true });
       const visualBuffer = await downloadMessageMedia(quoted, logger, config.maxMediaBytes);
       const session = { kind, visualBuffer, quoted, workDir, stage: kind === 'video' ? 'choose-audio' : 'await-audio' };
-      sessions.set(key, session);
+      sessions.set(key, session, () => fs.rm(workDir, { recursive: true, force: true }));
       const text = kind === 'video' ? prompt : '🎵 Kirim VN atau file audio untuk dipasangkan dengan gambar. Ketik .cancel untuk membatalkan.';
       await sock.sendMessage(jid, { text }, { quoted: message });
     });
