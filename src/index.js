@@ -62,7 +62,7 @@ async function onSocket(sock) {
       const messageTypes = Object.keys(message.message);
       const context = { sock, message, jid, sender, text };
 
-      logger.debug({ jid, messageTypes, hasText: Boolean(text) }, 'Incoming WhatsApp message');
+      logger.info({ jid, messageTypes, hasText: Boolean(text) }, 'Incoming WhatsApp message');
 
       try {
         const handled = await commands.dispatch(context);
