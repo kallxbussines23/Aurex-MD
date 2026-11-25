@@ -14,8 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
       - run: npm install --package-lock-only
-      - run: npm install
-      - run: npm run check
+      - run: npm ci
+      - run: find src test -type f -name '*.js' -print0 | xargs -0 -n1 node --check
       - run: npm test
