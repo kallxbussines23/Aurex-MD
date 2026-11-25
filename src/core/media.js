@@ -14,7 +14,7 @@ export function getMediaKind(message) {
   if (type === 'imageMessage') return 'image';
   if (type === 'videoMessage') return 'video';
   if (type === 'audioMessage') return 'audio';
-  if (type === 'documentMessage' && /^audio\\//i.test(content.documentMessage?.mimetype || '')) return 'audio';
+  if (type === 'documentMessage' && /^audio\//i.test(content.documentMessage?.mimetype || '')) return 'audio';
   return null;
 }
 
