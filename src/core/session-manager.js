@@ -7,11 +7,16 @@ export class SessionManager {
     this.#ttl = ttlMs;
   }
 
-  set(key, value) {
+  set(key, value, onExpire) {
     this.delete(key);
-    const timer = setTimeout(() => this.delete(key), this.#ttl);
+    const timer = setTimeout(() => {
+      const entry = this.#sessions.get(key);
+      if (!entry) return;
+      this.#sessions.delete(key);
+      Promise.resolve(entry.onExpire?.()).catch(() => {});
+    }, this.#ttl);
     timer.unref?.();
-    this.#sessions.set(key, { value, timer, expiresAt: Date.now() + this.#ttl });
+    this.#sessions.set(key, { value, timer, onExpire, expiresAt: Date.now() + this.#ttl });
     return value;
   }
 
@@ -20,6 +25,7 @@ export class SessionManager {
     if (!entry) return undefined;
     if (entry.expiresAt <= Date.now()) {
       this.delete(key);
+      Promise.resolve(entry.onExpire?.()).catch(() => {});
       return undefined;
     }
     return entry.value;
