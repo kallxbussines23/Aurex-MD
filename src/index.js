@@ -67,13 +67,13 @@ async function onSocket(sock) {
       try {
         const handled = await commands.dispatch(context);
         if (handled) {
-          logger.info({ jid, command: text.split(/\\s+/)[0] }, 'Command handled');
+          logger.info({ jid, command: text.split(/\s+/)[0] }, 'Command handled');
           continue;
         }
 
         if (text.startsWith(config.prefix)) {
           await sock.sendMessage(jid, {
-            text: `Command tidak dikenal: ${text.split(/\\s+/)[0]}\nKetik ${config.prefix}menu untuk melihat daftar command.`
+            text: `Command tidak dikenal: ${text.split(/\s+/)[0]}\nKetik ${config.prefix}menu untuk melihat daftar command.`
           }, { quoted: message });
           continue;
         }
