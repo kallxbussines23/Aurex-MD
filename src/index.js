@@ -52,36 +52,70 @@ async function onSocket(sock) {
   activeSocket = sock;
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return;
+
     for (const message of messages) {
       if (!message.message || message.key.fromMe) continue;
+
       const jid = message.key.remoteJid;
       const sender = message.key.participant || message.key.remoteJid;
       const text = extractText(message.message);
+      const messageTypes = Object.keys(message.message);
       const context = { sock, message, jid, sender, text };
+
+      logger.debug({ jid, messageTypes, hasText: Boolean(text) }, 'Incoming WhatsApp message');
+
       try {
         const handled = await commands.dispatch(context);
-        if (handled) continue;
+        if (handled) {
+          logger.info({ jid, command: text.split(/\\s+/)[0] }, 'Command handled');
+          continue;
+        }
+
+        if (text.startsWith(config.prefix)) {
+          await sock.sendMessage(jid, {
+            text: `Command tidak dikenal: ${text.split(/\\s+/)[0]}\nKetik ${config.prefix}menu untuk melihat daftar command.`
+          }, { quoted: message });
+          continue;
+        }
+
         for (const handler of [...api.messageHandlers]) {
           const consumed = await handler(context);
           if (consumed) break;
         }
       } catch (error) {
-        logger.error({ err: error, jid }, 'Message handler failed');
+        logger.error({ err: error, jid, text }, 'Message handler failed');
         await sock.sendMessage(jid, { text: 'Terjadi kesalahan saat memproses pesan.' }, { quoted: message }).catch(() => {});
       }
     }
   });
+
   logger.info({ commands: commands.list() }, 'Commands registered');
 }
 
+function unwrapMessage(message) {
+  let current = message;
+  for (let i = 0; i < 5; i += 1) {
+    const wrapped = current.ephemeralMessage?.message
+      || current.viewOnceMessage?.message
+      || current.viewOnceMessageV2?.message
+      || current.viewOnceMessageV2Extension?.message
+      || current.documentWithCaptionMessage?.message
+      || current.editedMessage?.message;
+    if (!wrapped) break;
+    current = wrapped;
+  }
+  return current;
+}
+
 function extractText(message) {
-  const content = message.conversation
-    || message.extendedTextMessage?.text
-    || message.imageMessage?.caption
-    || message.videoMessage?.caption
-    || message.documentMessage?.caption
+  const content = unwrapMessage(message);
+  const value = content.conversation
+    || content.extendedTextMessage?.text
+    || content.imageMessage?.caption
+    || content.videoMessage?.caption
+    || content.documentMessage?.caption
     || '';
-  return typeof content === 'string' ? content.trim() : '';
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 const stopConnection = await startConnection({ logger, onSocket });
