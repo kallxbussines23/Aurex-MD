@@ -43,8 +43,7 @@ export async function startConnection({ logger, onSocket }) {
       auth: state,
       logger,
       printQRInTerminal: false,
-      markOnlineOnConnect: false,
-      browser: ['AUREX-MD', 'Chrome', '1.0.0']
+      markOnlineOnConnect: false
     });
 
     sock.ev.on('creds.update', saveCreds);
