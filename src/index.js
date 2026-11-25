@@ -17,11 +17,15 @@ const api = {
   commands,
   sessions,
   logger,
+  messageHandlers: [],
   onMessage(handler) {
-    this.messageHandlers ||= [];
+    if (typeof handler !== 'function') throw new TypeError('Message handler must be a function');
     this.messageHandlers.push(handler);
-  },
-  messageHandlers: []
+    return () => {
+      const index = this.messageHandlers.indexOf(handler);
+      if (index >= 0) this.messageHandlers.splice(index, 1);
+    };
+  }
 };
 
 const plugins = new PluginManager({
@@ -33,6 +37,16 @@ const plugins = new PluginManager({
 await fs.mkdir(config.tempDir, { recursive: true });
 const loaded = await plugins.loadAll();
 logger.info({ loaded }, 'Plugin initialization complete');
+
+commands.register('menu', async ({ sock, jid, message }) => {
+  const names = commands.list().map(name => `• ${config.prefix}${name}`).join('\n');
+  await sock.sendMessage(jid, { text: `🤖 *AUREX-MD*\n\nDaftar command:\n${names || 'Belum ada command.'}` }, { quoted: message });
+}, 'core');
+
+commands.register('plugins', async ({ sock, jid, message }) => {
+  const list = plugins.list().map(plugin => `• ${plugin.name} v${plugin.version}`).join('\n');
+  await sock.sendMessage(jid, { text: `🧩 *Plugin aktif*\n\n${list || 'Belum ada plugin aktif.'}` }, { quoted: message });
+}, 'core');
 
 async function onSocket(sock) {
   activeSocket = sock;
@@ -47,7 +61,7 @@ async function onSocket(sock) {
       try {
         const handled = await commands.dispatch(context);
         if (handled) continue;
-        for (const handler of api.messageHandlers) {
+        for (const handler of [...api.messageHandlers]) {
           const consumed = await handler(context);
           if (consumed) break;
         }
@@ -70,7 +84,7 @@ function extractText(message) {
   return typeof content === 'string' ? content.trim() : '';
 }
 
-await startConnection({ logger, onSocket });
+const stopConnection = await startConnection({ logger, onSocket });
 
 process.once('SIGINT', shutdown);
 process.once('SIGTERM', shutdown);
@@ -78,6 +92,7 @@ process.once('SIGTERM', shutdown);
 async function shutdown() {
   logger.info('Shutting down AUREX-MD');
   sessions.clear();
+  await stopConnection?.();
   if (activeSocket?.end) activeSocket.end(undefined);
   process.exit(0);
 }
