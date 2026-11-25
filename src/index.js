@@ -91,7 +91,7 @@ process.once('SIGTERM', shutdown);
 
 async function shutdown() {
   logger.info('Shutting down AUREX-MD');
-  sessions.clear();
+  await sessions.clear();
   await stopConnection?.();
   if (activeSocket?.end) activeSocket.end(undefined);
   process.exit(0);
