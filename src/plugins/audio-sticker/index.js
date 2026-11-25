@@ -102,7 +102,9 @@ async function createSticker({ sock, jid, message, session, sessions, key, logge
       sock, jid,
       stickerPath: result.stickerPath,
       audioPath: result.audioPath,
-      quoted: message
+      quoted: message,
+      seconds: result.seconds,
+      isAnimated: result.isAnimated
     });
     await sock.sendMessage(jid, { text: '✅ Audio Sticker berhasil dibuat.' }, { quoted: message });
   } catch (error) {
