@@ -34,7 +34,13 @@ export default {
       if (old?.workDir) await fs.rm(old.workDir, { recursive: true, force: true });
       const workDir = path.join(config.tempDir, 'audio-sticker', Buffer.from(key).toString('base64url'));
       await fs.mkdir(workDir, { recursive: true });
-      const visualBuffer = await downloadMessageMedia(quoted, logger, config.maxMediaBytes);
+      let visualBuffer;
+      try {
+        visualBuffer = await downloadMessageMedia(quoted, logger, config.maxMediaBytes);
+      } catch (error) {
+        await fs.rm(workDir, { recursive: true, force: true });
+        throw error;
+      }
       const session = { kind, visualBuffer, quoted, workDir, stage: kind === 'video' ? 'choose-audio' : 'await-audio' };
       sessions.set(key, session, () => fs.rm(workDir, { recursive: true, force: true }));
       const text = kind === 'video' ? prompt : '🎵 Kirim VN atau file audio untuk dipasangkan dengan gambar. Ketik .cancel untuk membatalkan.';
