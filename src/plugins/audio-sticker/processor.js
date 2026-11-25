@@ -9,7 +9,12 @@ function run(command, args) {
     let stderr = '';
     child.stderr.on('data', chunk => { stderr += chunk.toString(); });
     child.once('error', reject);
-    child.once('close', code => code === 0 ? resolve() : reject(new Error(`FFmpeg exited ${code}: ${stderr.slice(-1200)}`)));
+    child.once('close', code => {
+      if (code === 0) return resolve();
+      const error = new Error(`FFmpeg exited ${code}: ${stderr.slice(-1200)}`);
+      if (/does not contain any stream|matches no streams|no audio stream/i.test(stderr)) error.code = 'NO_AUDIO_STREAM';
+      reject(error);
+    });
   });
 }
 
