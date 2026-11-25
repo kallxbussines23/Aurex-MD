@@ -2,7 +2,7 @@ export function parseCommand(text, prefix = '.') {
   if (typeof text !== 'string' || !text.startsWith(prefix)) return null;
   const body = text.slice(prefix.length).trim();
   if (!body) return null;
-  const [name, ...args] = body.split(/\\s+/);
+  const [name, ...args] = body.split(/\s+/);
   return { name: name.toLowerCase(), args, raw: body };
 }
 
