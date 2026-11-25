@@ -2,12 +2,10 @@
 
 Modular WhatsApp bot built with Node.js and Baileys.
 
-> Audio Sticker support is an experimental plugin until end-to-end compatibility is verified against real WhatsApp clients.
-
 ## Requirements
 
 - Node.js 20 or newer
-- FFmpeg available on `PATH`
+- FFmpeg and FFprobe with libwebp, libwebp_anim, and libopus encoders
 
 ## Setup
 
@@ -17,24 +15,39 @@ cp .env.example .env
 npm start
 ```
 
-On first start, scan the QR code printed in the terminal. Keep `.env`, `auth/`, and generated media private.
+On first start, scan the QR code printed in the terminal. To use pairing code instead, set `PAIRING_NUMBER` in `.env` using the international country code and digits only. Keep `.env`, `auth/`, and generated media private.
 
 ## Commands
 
 - `.menu` — list available commands
+- `.plugins` — list loaded plugins
 - `.sa` — start Audio Sticker creation by replying to an image or video
-- `.default` — use the source video's audio
-- `.custom` — use a supplied voice note/audio file
+- `.default` — use the source video's original audio
+- `.custom` — choose a custom VN/audio file for a video
 - `.cancel` — cancel the current Audio Sticker session
+
+## Audio Sticker flows
+
+- **Video:** reply with `.sa`, then choose `.default` or `.custom`. If the video has no audio stream, the session remains active and the bot asks for `.custom`.
+- **Image:** reply with `.sa`, then send a VN or audio file.
+- Audio is normalized to Ogg/Opus, limited to seven seconds, and trimmed to match the visual duration.
+- Each session is isolated by chat and sender and expires automatically after the configured TTL.
+
+The Audio Sticker transport uploads the WebP and Opus media, encodes the uploaded audio metadata into the StickerMessage protobuf field 26, validates the encoded message locally, and relays a single WhatsApp message. This is a protocol-level extension because the stock Baileys schema does not expose a stable public Audio Sticker helper. Client compatibility still needs a real linked-device send/receive test; CI validates protobuf embedding and media generation, not WhatsApp server acceptance or playback on every client.
 
 ## Plugin architecture
 
-Place each feature in its own folder under `plugins/`. Plugins export metadata and a `register(api)` function. Core owns the WhatsApp connection, command routing, sessions, and plugin lifecycle.
+Place each feature in its own folder under `src/plugins/`. A plugin exports a default manifest with `name`, `version`, and `register(api)`. Commands and message handlers are scoped to their plugin and removed when it is unloaded.
 
-## Audio Sticker compatibility
+## Tests
 
-The plugin prepares the visual and audio media independently. The final embedded-audio sticker transport is guarded behind an experimental encoder adapter because standard Baileys send helpers do not expose a stable public Audio Sticker API. Do not treat a successful media preparation as proof that WhatsApp accepted an embedded-audio sticker.
+```bash
+npm test
+npm run check
+```
 
-## Safety and privacy
+GitHub Actions installs FFmpeg, checks JavaScript syntax, runs unit tests, and exercises video/image-to-WebP plus Opus media processing.
 
-Use only media you have permission to process. Never commit WhatsApp auth credentials, private media, or `.env` files.
+## Privacy and safety
+
+Use only media you have permission to process. WhatsApp session files contain credentials: never share or commit the `auth/` directory. Avoid sending private media to bots you do not control.
