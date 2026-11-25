@@ -91,7 +91,7 @@ export async function startConnection({ logger, onSocket }) {
         reconnectTimer = setTimeout(() => {
           connect().catch(error => logger.error({ err: error }, 'Reconnect failed'));
         }, delay);
-        reconnectTimer.unref?.();
+        // Keep the Node.js process alive while the reconnect is pending.
       }
     });
 
