@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "description": "Modular WhatsApp bot with an extensible plugin system",
-  "engines": { "node": ">=20.0.0" },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node src/index.js",
     "test": "node --test",
-    "check": "node --check src/index.js && node --check src/core/connection.js && node --check src/core/plugin-manager.js && node --check src/core/command-handler.js && node --check src/plugins/audio-sticker/index.js && node --check src/plugins/audio-sticker/processor.js && node --check src/plugins/audio-sticker/transport.js"
+    "check": "node --check src/index.js && node --check src/core/config.js && node --check src/core/logger.js && node --check src/core/session-manager.js && node --check src/core/command-handler.js && node --check src/core/plugin-manager.js && node --check src/core/media.js && node --check src/core/connection.js && node --check src/plugins/audio-sticker/index.js && node --check src/plugins/audio-sticker/processor.js && node --check src/plugins/audio-sticker/transport.js && node --check src/plugins/audio-sticker/encoder-patch.js"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
