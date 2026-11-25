@@ -59,7 +59,7 @@ export default {
         return;
       }
       session.stage = 'await-audio';
-      sessions.set(key, session);
+      sessions.set(key, session, () => fs.rm(session.workDir, { recursive: true, force: true }));
       await sock.sendMessage(jid, { text: 'Silakan kirim VN atau file audio. Ketik .cancel untuk membatalkan.' }, { quoted: message });
     });
 
@@ -89,6 +89,7 @@ export default {
 };
 
 async function createSticker({ sock, jid, message, session, sessions, key, logger, audioBuffer }) {
+  let keepSession = false;
   try {
     await sock.sendMessage(jid, { text: '⏳ Memproses media Audio Sticker...' }, { quoted: message });
     const result = await processAudioSticker({
@@ -105,10 +106,19 @@ async function createSticker({ sock, jid, message, session, sessions, key, logge
     });
     await sock.sendMessage(jid, { text: '✅ Audio Sticker berhasil dibuat.' }, { quoted: message });
   } catch (error) {
-    logger.error({ err: error }, 'Audio Sticker failed');
-    await sock.sendMessage(jid, { text: `❌ Gagal membuat Audio Sticker: ${error.message}` }, { quoted: message });
+    if (error.code === 'NO_AUDIO_STREAM' && session.kind === 'video') {
+      keepSession = true;
+      session.stage = 'choose-audio';
+      sessions.set(key, session, () => fs.rm(session.workDir, { recursive: true, force: true }));
+      await sock.sendMessage(jid, { text: 'Video ini tidak memiliki audio bawaan. Ketik .custom lalu kirim VN atau file audio.' }, { quoted: message });
+    } else {
+      logger.error({ err: error }, 'Audio Sticker failed');
+      await sock.sendMessage(jid, { text: `❌ Gagal membuat Audio Sticker: ${error.message}` }, { quoted: message });
+    }
   } finally {
-    sessions.delete(key);
-    await fs.rm(session.workDir, { recursive: true, force: true });
+    if (!keepSession) {
+      sessions.delete(key);
+      await fs.rm(session.workDir, { recursive: true, force: true });
+    }
   }
 }
