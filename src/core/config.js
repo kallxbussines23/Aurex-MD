@@ -8,7 +8,7 @@ const number = (value, fallback) => {
 
 export const config = Object.freeze({
   prefix: process.env.PREFIX || '.',
-  pairingNumber: (process.env.PAIRING_NUMBER || '').replace(/\\D/g, ''),
+  pairingNumber: (process.env.PAIRING_NUMBER || '').replace(/\D/g, ''),
   sessionDir: path.resolve(process.env.SESSION_DIR || './auth'),
   tempDir: path.resolve(process.env.TEMP_DIR || './temp'),
   sessionTtlMs: number(process.env.SESSION_TTL_MS, 120_000),
