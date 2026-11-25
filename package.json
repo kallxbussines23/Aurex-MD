@@ -1,0 +1,20 @@
+{
+  "name": "aurex-md",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Modular WhatsApp bot with an extensible plugin system",
+  "engines": { "node": ">=20.0.0" },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test",
+    "check": "node --check src/index.js && node --check src/core/connection.js && node --check src/core/plugin-manager.js && node --check src/core/command-handler.js && node --check src/plugins/audio-sticker/index.js && node --check src/plugins/audio-sticker/processor.js && node --check src/plugins/audio-sticker/transport.js"
+  },
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@whiskeysockets/baileys": "7.0.0-rc14",
+    "dotenv": "^16.4.7",
+    "pino": "^9.6.0",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
