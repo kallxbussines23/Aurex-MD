@@ -39,8 +39,13 @@ export class SessionManager {
     return true;
   }
 
-  clear() {
-    for (const key of this.#sessions.keys()) this.delete(key);
+  async clear() {
+    const cleanups = [];
+    for (const [key, entry] of this.#sessions) {
+      this.delete(key);
+      if (entry.onExpire) cleanups.push(Promise.resolve().then(() => entry.onExpire()));
+    }
+    await Promise.allSettled(cleanups);
   }
 
   get size() {
