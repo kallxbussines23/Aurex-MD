@@ -6,6 +6,28 @@ import { config } from './config.js';
 
 let requestedPhoneNumber = '';
 
+const waitForWebSocket = async (sock, timeoutMs = 20_000) => {
+  const startedAt = Date.now();
+
+  while (!sock.ws?.isOpen) {
+    if (sock.ws?.isClosed || sock.ws?.isClosing) {
+      throw new Error('WebSocket closed before pairing initialization');
+    }
+    if (Date.now() - startedAt >= timeoutMs) {
+      throw new Error('Timed out waiting for WhatsApp WebSocket');
+    }
+    await new Promise(resolve => setTimeout(resolve, 250));
+  }
+
+  // The WebSocket opening event starts the Noise handshake asynchronously.
+  // Give that handshake time to finish before sending the pairing IQ.
+  await new Promise(resolve => setTimeout(resolve, 3_000));
+
+  if (!sock.ws?.isOpen) {
+    throw new Error('WebSocket closed during WhatsApp handshake');
+  }
+};
+
 async function askPhoneNumber() {
   while (true) {
     const rl = createInterface({ input, output });
@@ -75,8 +97,9 @@ export async function startConnection({ logger, onSocket }) {
 
     if (!state.creds.registered) {
       try {
-        // Give the socket time to initialize before requesting the pairing code.
-        await new Promise(resolve => setTimeout(resolve, 1_500));
+        // Wait for the transport and Noise handshake instead of relying on a
+        // short fixed delay, which can race on slower mobile connections.
+        await waitForWebSocket(sock);
         const code = await sock.requestPairingCode(requestedPhoneNumber);
         console.log('\n========================================');
         console.log(' AUREX-MD — WHATSAPP PAIRING CODE');
@@ -89,7 +112,9 @@ export async function startConnection({ logger, onSocket }) {
       } catch (error) {
         logger.error({ err: error }, 'Failed to generate pairing code');
         try { sock.end(error); } catch {}
-        throw error;
+        // The connection.update close handler schedules a clean reconnect.
+        // Keep the process alive instead of crashing Termux with an uncaught error.
+        return sock;
       }
     }
 
