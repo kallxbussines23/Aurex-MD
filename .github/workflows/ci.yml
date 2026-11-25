@@ -14,6 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: npm install --package-lock-only
       - run: npm ci
       - run: find src test -type f -name '*.js' -print0 | xargs -0 -n1 node --check
