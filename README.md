@@ -15,7 +15,13 @@ cp .env.example .env
 npm start
 ```
 
-On first start, scan the QR code printed in the terminal. To use pairing code instead, set `PAIRING_NUMBER` in `.env` using the international country code and digits only. Keep `.env`, `auth/`, and generated media private.
+### Login (Pairing Code only)
+
+Aurex-MD uses **WhatsApp Pairing Code as its only login method**. QR login is disabled and is not available as a fallback.
+
+On the first start, enter your WhatsApp number in international format when prompted (country code and digits only, for example `62812xxxxxxxx`). The bot prints a pairing code. In WhatsApp, open **Linked devices → Link a device → Link with phone number**, then enter that code.
+
+After successful pairing, the session is saved in `auth/` and reused automatically on later starts. If you log the device out, restart Aurex-MD and enter the number again. Keep `.env` and `auth/` private; never share or commit session credentials.
 
 ## Commands
 
